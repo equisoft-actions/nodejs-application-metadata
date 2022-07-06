@@ -83,7 +83,7 @@ runs:
           RELEASE_BRANCH="$DEFAULT_BRANCH"
         fi
 
-        if [[ $GITHUB_REF =~ refs/tags/v[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+        if [[ $GITHUB_REF =~ refs/tags/v[0-9]{1,4}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
           VERSION=${GITHUB_REF#refs/tags/v}
           PUBLISHABLE=$(git merge-base --is-ancestor "$GITHUB_SHA" "origin/$RELEASE_BRANCH" && echo "true" || echo "false")
           IS_RELEASE="$PUBLISHABLE"
