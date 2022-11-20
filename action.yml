@@ -51,7 +51,7 @@ runs:
   steps:
     - name: Find latest released version
       id: latest
-      uses: oprypin/find-latest-tag@v1.1.0
+      uses: oprypin/find-latest-tag@v1.1.1
       with:
         repository: ${{ github.repository }}
         releases-only: false
