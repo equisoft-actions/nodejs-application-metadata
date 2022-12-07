@@ -21,6 +21,17 @@ inputs:
     description: Branch allowed for release. Default to the repository default branch.
     required: false
 
+  hotfix-branch-prefix:
+    description: |
+      Branch prefix allowed for hotfix. Tags on this branch will set is_hotfix to true.
+      Make sure the branch is available with git fetch (if fetch-depth is unset or > 0)
+      ```yaml
+      - name: Fetch hotfix branch (for action-metadata commit check)
+        run: |
+        git fetch --no-tags --prune --depth=1000 origin '+refs/heads/stable/*:refs/remotes/origin/stable/*'
+      ```
+    required: false
+
 outputs:
   publishable:
     description: |
@@ -65,9 +76,11 @@ runs:
       run: |
         PUBLISHABLE=false
         IS_RELEASE=false
+        IS_HOTFIX=false
         VERSION=0.0.0-SNAPSHOT
         DEFAULT_BRANCH=${{ github.event.repository.default_branch }}
         RELEASE_BRANCH=${{ inputs.release-branch }}
+        HOTFIX_BRANCH_PREFIX=${{ inputs.hotfix-branch-prefix }}
         NPM_TAG=
 
         LATEST_VERSION=${{ steps.latest.outputs.tag }}
@@ -86,8 +99,21 @@ runs:
         if [[ $GITHUB_REF =~ refs/tags/v[0-9]{1,4}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
           VERSION=${GITHUB_REF#refs/tags/v}
           PUBLISHABLE=$(git merge-base --is-ancestor "$GITHUB_SHA" "origin/$RELEASE_BRANCH" && echo "true" || echo "false")
-          IS_RELEASE="$PUBLISHABLE"
           NPM_TAG=latest
+          if [[ "$PUBLISHABLE" == "false" && ! -z "$HOTFIX_BRANCH_PREFIX" ]]; then
+              # Maybe we have an hotfix. Must be ancestor to the corresponding stable hotfix branch
+              HOTFIX_BRANCH="${HOTFIX_BRANCH_PREFIX%/}/v${VERSION%.*}.x"
+              if [[ ! -z "$(git ls-remote --heads origin ${HOTFIX_BRANCH})" ]]; then
+                PUBLISHABLE=$(git merge-base --is-ancestor "$GITHUB_SHA" "origin/$HOTFIX_BRANCH" && echo "true" || echo "false")
+                if [[ "PUBLISHABLE" == "true" ]]; then
+                  IS_HOTFIX="true"
+                  NPM_TAG="$VERSION"
+                fi
+              else
+                echo "Hotfix branch '${HOTFIX_BRANCH}' does not exists. Could not publish tag '${VERSION}'"
+              fi
+            fi
+          IS_RELEASE="$PUBLISHABLE"
         elif [[ $GITHUB_REF == refs/tags/* ]]; then
           VERSION=$(echo ${GITHUB_REF#refs/tags/} | sed -r 's#/+#-#g')
         elif [[ $GITHUB_REF == refs/heads/* ]]; then
@@ -103,7 +129,16 @@ runs:
           VERSION=pr-${{ github.event.number }}
         fi
 
-        echo ::set-output name=is-release::$IS_RELEASE
-        echo ::set-output name=publishable::$PUBLISHABLE
-        echo ::set-output name=version::$VERSION
-        echo ::set-output name=npm-tag::$NPM_TAG
+        echo "is-release=$IS_RELEASE" >> $GITHUB_OUTPUT
+        echo "publishable=$PUBLISHABLE" >> $GITHUB_OUTPUT
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "is-hotfix=$IS_HOTFIX" >> $GITHUB_OUTPUT
+        echo "npm-tag=$NPM_TAG" >> $GITHUB_OUTPUT
+        echo "### Aplication metadata" >> $GITHUB_STEP_SUMMARY
+        echo "|Output|Value|" >> $GITHUB_STEP_SUMMARY
+        echo "|:---|:---|" >> $GITHUB_STEP_SUMMARY
+        echo "|__is-release__|$IS_RELEASE|" >> $GITHUB_STEP_SUMMARY
+        echo "|__publishable__|$PUBLISHABLE|" >> $GITHUB_STEP_SUMMARY
+        echo "|__version__|$VERSION|" >> $GITHUB_STEP_SUMMARY
+        echo "|__is-hotfix__|$IS_HOTFIX|" >> $GITHUB_STEP_SUMMARY
+        echo "|__npm-tag__|$NPM_TAG|" >> $GITHUB_STEP_SUMMARY
