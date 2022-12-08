@@ -28,7 +28,7 @@ inputs:
       ```yaml
       - name: Fetch hotfix branch (for action-metadata commit check)
         run: |
-        git fetch --no-tags --prune --depth=1000 origin '+refs/heads/stable/*:refs/remotes/origin/stable/*'
+        git fetch --no-tags --prune --depth=1000 origin '+refs/heads/release/*:refs/remotes/origin/release/*'
       ```
     required: false
 
@@ -86,6 +86,7 @@ runs:
         LATEST_VERSION=${{ steps.latest.outputs.tag }}
         LATEST_VERSION=${LATEST_VERSION#v}
         LATEST_VERSION=${LATEST_VERSION:-0.0.0}
+        LATEST_VERSION_MINOR=${LATEST_VERSION%.*}
 
         if [[ "$DEFAULT_BRANCH" == "" ]]; then
           # Schedule triggers have no `github.event` contexts
@@ -98,6 +99,7 @@ runs:
 
         if [[ $GITHUB_REF =~ refs/tags/v[0-9]{1,4}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
           VERSION=${GITHUB_REF#refs/tags/v}
+          NEXT_VERSION_MINOR=${VERSION%.*}
           PUBLISHABLE=$(git merge-base --is-ancestor "$GITHUB_SHA" "origin/$RELEASE_BRANCH" && echo "true" || echo "false")
           NPM_TAG=latest
           if [[ "$PUBLISHABLE" == "false" && ! -z "$HOTFIX_BRANCH_PREFIX" ]]; then
@@ -105,9 +107,11 @@ runs:
               HOTFIX_BRANCH="${HOTFIX_BRANCH_PREFIX%/}/v${VERSION%.*}.x"
               if [[ ! -z "$(git ls-remote --heads origin ${HOTFIX_BRANCH})" ]]; then
                 PUBLISHABLE=$(git merge-base --is-ancestor "$GITHUB_SHA" "origin/$HOTFIX_BRANCH" && echo "true" || echo "false")
-                if [[ "PUBLISHABLE" == "true" ]]; then
+                if [[ "$PUBLISHABLE" == "true" ]]; then
                   IS_HOTFIX="true"
-                  NPM_TAG="$VERSION"
+                  if [[ "$NEXT_VERSION_MINOR" != "$LATEST_VERSION_MINOR"]]; then
+                    NPM_TAG=snapshot
+                  fi
                 fi
               else
                 echo "Hotfix branch '${HOTFIX_BRANCH}' does not exists. Could not publish tag '${VERSION}'"
