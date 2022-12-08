@@ -115,6 +115,7 @@ runs:
                 fi
               else
                 echo "Hotfix branch '${HOTFIX_BRANCH}' does not exists. Could not publish tag '${VERSION}'"
+                exit 1;
               fi
             fi
           IS_RELEASE="$PUBLISHABLE"
