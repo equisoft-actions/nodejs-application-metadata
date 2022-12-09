@@ -109,8 +109,8 @@ runs:
                 PUBLISHABLE=$(git merge-base --is-ancestor "$GITHUB_SHA" "origin/$HOTFIX_BRANCH" && echo "true" || echo "false")
                 if [[ "$PUBLISHABLE" == "true" ]]; then
                   IS_HOTFIX="true"
-                  if [[ "$NEXT_VERSION_MINOR" != "$LATEST_VERSION_MINOR"]]; then
-                    NPM_TAG=snapshot
+                  if [[ "$NEXT_VERSION_MINOR" == "$LATEST_VERSION_MINOR"]]; then
+                    NPM_TAG=latest
                   fi
                 fi
               else
@@ -139,7 +139,8 @@ runs:
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "is-hotfix=$IS_HOTFIX" >> $GITHUB_OUTPUT
         echo "npm-tag=$NPM_TAG" >> $GITHUB_OUTPUT
-        echo "### Aplication metadata" >> $GITHUB_STEP_SUMMARY
+
+        echo "### Application metadata" >> $GITHUB_STEP_SUMMARY
         echo "|Output|Value|" >> $GITHUB_STEP_SUMMARY
         echo "|:---|:---|" >> $GITHUB_STEP_SUMMARY
         echo "|__is-release__|$IS_RELEASE|" >> $GITHUB_STEP_SUMMARY
