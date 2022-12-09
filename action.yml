@@ -109,7 +109,7 @@ runs:
                 PUBLISHABLE=$(git merge-base --is-ancestor "$GITHUB_SHA" "origin/$HOTFIX_BRANCH" && echo "true" || echo "false")
                 if [[ "$PUBLISHABLE" == "true" ]]; then
                   IS_HOTFIX="true"
-                  if [[ "$NEXT_VERSION_MINOR" == "$LATEST_VERSION_MINOR"]]; then
+                  if [[ "$NEXT_VERSION_MINOR" == "$LATEST_VERSION_MINOR" ]]; then
                     NPM_TAG=latest
                   fi
                 fi
