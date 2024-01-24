@@ -38,6 +38,10 @@ outputs:
       'true' if this build can publish artifacts. Only builds from the default branch can be published.
       'false' if this build should not publish its artifacts.
     value: ${{ steps.metadata.outputs.publishable }}
+  is-hotfix:
+    description: |
+      'true' if this build is a hotfix
+    value: ${{ steps.metadata.outputs.is-hotfix }}
   is-release:
     description: |
       'true' if this build should create a full release. Only 'publishable' builds can be released. A release is
