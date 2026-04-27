@@ -7,7 +7,7 @@ description: |
   ```yaml
   steps:
     - name: Checkout
-      uses: actions/checkout@v6
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       with:
         fetch-depth: 0
 
@@ -66,7 +66,7 @@ runs:
   steps:
     - name: Find latest released version
       id: latest
-      uses: oprypin/find-latest-tag@v1.1.2
+      uses: oprypin/find-latest-tag@dd2729fe78b0bb55523ae2b2a310c6773a652bd1 # v1.1.2
       with:
         repository: ${{ github.repository }}
         releases-only: false
